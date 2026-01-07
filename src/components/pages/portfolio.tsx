@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -27,19 +26,7 @@ import {
 } from '@/components/ui/select';
 import { Trash2, TrendingUp, TrendingDown, PlusCircle } from 'lucide-react';
 
-// Zod 驗證 schema
-const portfolioSchema = z.object({
-    coinId: z.string().min(1, 'Select a coin'),
-    amount: z.coerce
-        .number({ invalid_type_error: 'Please enter a valid number' })
-        .positive('Amount must be greater than 0'),
-    purchasePrice: z.coerce
-        .number({ invalid_type_error: 'Please enter a valid price' })
-        .positive('Price must be greater than 0'),
-    purchaseDate: z.string().min(1, 'Please select a date'),
-});
-
-type PortfolioFormData = z.infer<typeof portfolioSchema>;
+import { portfolioSchema, type PortfolioFormData } from '@/validations/portfolio';
 
 interface Transaction {
     id: string;
@@ -82,7 +69,7 @@ const PortfolioPage = () => {
         reset,
         watch,
         setValue,
-    } = useForm<PortfolioFormData>({
+    } = useForm({
         resolver: zodResolver(portfolioSchema),
         defaultValues: {
             coinId: '',
@@ -257,7 +244,7 @@ const PortfolioPage = () => {
                                         <SelectTrigger id="coin-select">
                                             <SelectValue placeholder="-- Select a coin --" />
                                         </SelectTrigger>
-                                        <SelectContent 
+                                        <SelectContent
                                             position='popper'
                                             className="w-[var(--radix-select-trigger-width)]"
                                         >
@@ -277,12 +264,12 @@ const PortfolioPage = () => {
                                 {/* 改用 Field - Quantity */}
                                 <Field>
                                     <FieldLabel htmlFor="amount">Quantity</FieldLabel>
-                                    <Input 
+                                    <Input
                                         id="amount"
-                                        type="number" 
-                                        step="any" 
-                                        {...register('amount')} 
-                                        placeholder="0.00" 
+                                        type="number"
+                                        step="any"
+                                        {...register('amount')}
+                                        placeholder="0.00"
                                     />
                                     <FieldDescription>
                                         Enter the amount of coins you purchased
@@ -300,12 +287,12 @@ const PortfolioPage = () => {
                                             </span>
                                         )}
                                     </div>
-                                    <Input 
+                                    <Input
                                         id="purchase-price"
-                                        type="number" 
-                                        step="any" 
-                                        {...register('purchasePrice')} 
-                                        placeholder="0.00" 
+                                        type="number"
+                                        step="any"
+                                        {...register('purchasePrice')}
+                                        placeholder="0.00"
                                     />
                                     <FieldError>{errors.purchasePrice?.message}</FieldError>
                                 </Field>

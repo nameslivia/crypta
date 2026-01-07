@@ -7,6 +7,7 @@ import NotFoundPage from './components/pages/not-found';
 import CoinDetailsPage from './components/pages/coin-details';
 import TrendsPage from './components/pages/trends';
 import PortfolioPage from './components/pages/portfolio';
+import CoinsTablePage from './components/pages/coins-table-page';
 
 const API_URL = import.meta.env.VITE_COINS_API_URL;
 
@@ -74,6 +75,7 @@ const App = () => {
           <Route path='/coin/:id' element={<CoinDetailsPage />} />
           <Route path='/trends' element={<TrendsPage />} />
           <Route path='/portfolio' element={<PortfolioPage />} />
+          <Route path='/coins-table' element={<CoinsTablePage />} />
           <Route path='*' element={<NotFoundPage />} />
         </Routes>
       </main>

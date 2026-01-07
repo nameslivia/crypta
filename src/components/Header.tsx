@@ -49,6 +49,17 @@ const Header = () => {
                         </li>
                         <li>
                             <Link
+                                to="/coins-table"
+                                className={cn(
+                                    "text-sm font-medium transition-colors hover:text-primary",
+                                    "text-muted-foreground hover:text-foreground"
+                                )}
+                            >
+                                Coins Table
+                            </Link>
+                        </li>
+                        <li>
+                            <Link
                                 to="/about"
                                 className={cn(
                                     "text-sm font-medium transition-colors hover:text-primary",

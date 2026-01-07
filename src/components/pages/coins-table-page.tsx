@@ -129,7 +129,7 @@ const CoinsTablePage = () => {
 
     const { table, dataQuery, globalFilter, setGlobalFilter } = useCoins(columns);
 
-    const isInitialLoading = dataQuery.isLoading;
+    const isInitialLoading = dataQuery.isFetching;
     const currentPage = table.getState().pagination.pageIndex + 1;
     const totalPages = table.getPageCount();
 
@@ -205,21 +205,18 @@ const CoinsTablePage = () => {
             </div>
 
             {/* 使用 shadcn Pagination */}
-            <div className="flex items-center justify-between px-2 py-4">
-                <div className="flex items-center gap-4">
-                    <div className="text-sm text-muted-foreground">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-2 py-4">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                    <div className="text-sm text-muted-foreground whitespace-nowrap">
                         {isInitialLoading ? (
-                            <Skeleton className="h-4 w-32" />
+                            <Skeleton className="h-4 w-48" />
                         ) : (
-                            <>
-                                Showing {table.getRowModel().rows.length} of {dataQuery.data?.total ?? 0} rows
-                                {dataQuery.isFetching && <span className="ml-2">(Loading...)</span>}
-                            </>
+                            `Showing ${table.getRowModel().rows.length} of ${dataQuery.data?.total ?? 0} rows`
                         )}
                     </div>
                     
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">Rows per page:</span>
+                        <span className="text-sm text-muted-foreground whitespace-nowrap">Rows per page:</span>
                         <Select
                             value={table.getState().pagination.pageSize.toString()}
                             onValueChange={(value) => table.setPageSize(Number(value))}
@@ -254,9 +251,9 @@ const CoinsTablePage = () => {
                             Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
                                 <PaginationItem key={page}>
                                     <PaginationLink
-                                        onClick={() => table.setPageIndex(page - 1)}
+                                        onClick={() => !isInitialLoading && table.setPageIndex(page - 1)}
                                         isActive={currentPage === page}
-                                        className="cursor-pointer"
+                                        className={isInitialLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                     >
                                         {page}
                                     </PaginationLink>
@@ -267,9 +264,9 @@ const CoinsTablePage = () => {
                             <>
                                 <PaginationItem>
                                     <PaginationLink
-                                        onClick={() => table.setPageIndex(0)}
+                                        onClick={() => !isInitialLoading && table.setPageIndex(0)}
                                         isActive={currentPage === 1}
-                                        className="cursor-pointer"
+                                        className={isInitialLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                     >
                                         1
                                     </PaginationLink>
@@ -287,9 +284,9 @@ const CoinsTablePage = () => {
                                         return (
                                             <PaginationItem key={page}>
                                                 <PaginationLink
-                                                    onClick={() => table.setPageIndex(page - 1)}
+                                                    onClick={() => !isInitialLoading && table.setPageIndex(page - 1)}
                                                     isActive={currentPage === page}
-                                                    className="cursor-pointer"
+                                                    className={isInitialLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                                 >
                                                     {page}
                                                 </PaginationLink>
@@ -307,9 +304,9 @@ const CoinsTablePage = () => {
                                 
                                 <PaginationItem>
                                     <PaginationLink
-                                        onClick={() => table.setPageIndex(totalPages - 1)}
+                                        onClick={() => !isInitialLoading && table.setPageIndex(totalPages - 1)}
                                         isActive={currentPage === totalPages}
-                                        className="cursor-pointer"
+                                        className={isInitialLoading ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
                                     >
                                         {totalPages}
                                     </PaginationLink>

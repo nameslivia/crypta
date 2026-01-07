@@ -1,17 +1,14 @@
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { type ColumnDef, type PaginationState, type SortingState } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
-import { fetchCoinsServer, type Coin } from '@/lib/mock-api';
+import { type Coin } from '@/lib/mock-api';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
+import { useCoins } from '@/hooks/use-coins';
 
 const CoinsTablePage = () => {
-    const [data, setData] = useState<Coin[]>([]);
-    const [rowCount, setRowCount] = useState(0);
-    const [loading, setLoading] = useState(false);
-
     // Table State
     const [pagination, setPagination] = useState<PaginationState>({
         pageIndex: 0,
@@ -20,38 +17,16 @@ const CoinsTablePage = () => {
     const [sorting, setSorting] = useState<SortingState>([]);
     const [globalFilter, setGlobalFilter] = useState('');
 
-    // Debounce filter
-    const [debouncedFilter, setDebouncedFilter] = useState(globalFilter);
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            setDebouncedFilter(globalFilter);
-            setPagination((prev) => ({ ...prev, pageIndex: 0 })); // Reset to page 1 on search
-        }, 500);
-        return () => clearTimeout(handler);
-    }, [globalFilter]);
+    // Query
+    const { data, isFetching } = useCoins({
+        pageIndex: pagination.pageIndex,
+        pageSize: pagination.pageSize,
+        sorting,
+        globalFilter,
+    });
 
-    // Fetch data
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                const res = await fetchCoinsServer({
-                    pageIndex: pagination.pageIndex,
-                    pageSize: pagination.pageSize,
-                    sorting,
-                    globalFilter: debouncedFilter,
-                });
-                setData(res.data);
-                setRowCount(res.total);
-            } catch (error) {
-                console.error('Failed to fetch coins:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        loadData();
-    }, [pagination, sorting, debouncedFilter]);
+    const tableData = data?.data ?? [];
+    const rowCount = data?.total ?? 0;
 
     const columns = useMemo<ColumnDef<Coin>[]>(
         () => [
@@ -175,13 +150,13 @@ const CoinsTablePage = () => {
 
             <DataTable
                 columns={columns}
-                data={data}
+                data={tableData}
                 rowCount={rowCount}
                 pagination={pagination}
                 sorting={sorting}
                 onPaginationChange={setPagination}
                 onSortingChange={setSorting}
-                loading={loading}
+                loading={isFetching}
             />
         </div>
     );

@@ -1,33 +1,13 @@
-
-import { useState, useMemo } from 'react';
-import { type ColumnDef, type PaginationState, type SortingState } from '@tanstack/react-table';
-import { DataTable } from '@/components/ui/data-table';
+import { useMemo } from 'react';
+import { type ColumnDef } from '@tanstack/react-table';
 import { type Coin } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';
 import { useCoins } from '@/hooks/use-coins';
+import { flexRender } from '@tanstack/react-table';
 
 const CoinsTablePage = () => {
-    // Table State
-    const [pagination, setPagination] = useState<PaginationState>({
-        pageIndex: 0,
-        pageSize: 10,
-    });
-    const [sorting, setSorting] = useState<SortingState>([]);
-    const [globalFilter, setGlobalFilter] = useState('');
-
-    // Query
-    const { data, isFetching } = useCoins({
-        pageIndex: pagination.pageIndex,
-        pageSize: pagination.pageSize,
-        sorting,
-        globalFilter,
-    });
-
-    const tableData = data?.data ?? [];
-    const rowCount = data?.total ?? 0;
-
     const columns = useMemo<ColumnDef<Coin>[]>(
         () => [
             {
@@ -130,6 +110,8 @@ const CoinsTablePage = () => {
         []
     );
 
+    const { table, dataQuery, globalFilter, setGlobalFilter } = useCoins(columns);
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="flex flex-col gap-4 mb-8">
@@ -148,16 +130,96 @@ const CoinsTablePage = () => {
                 />
             </div>
 
-            <DataTable
-                columns={columns}
-                data={tableData}
-                rowCount={rowCount}
-                pagination={pagination}
-                sorting={sorting}
-                onPaginationChange={setPagination}
-                onSortingChange={setSorting}
-                loading={isFetching}
-            />
+            {/* 直接渲染 table，不使用 DataTable component */}
+            <div className="rounded-md border">
+                <table className="w-full">
+                    <thead>
+                        {table.getHeaderGroups().map((headerGroup) => (
+                            <tr key={headerGroup.id} className="border-b">
+                                {headerGroup.headers.map((header) => (
+                                    <th key={header.id} className="h-12 px-4 text-left align-middle font-medium">
+                                        {header.isPlaceholder
+                                            ? null
+                                            : flexRender(header.column.columnDef.header, header.getContext())}
+                                    </th>
+                                ))}
+                            </tr>
+                        ))}
+                    </thead>
+                    <tbody>
+                        {table.getRowModel().rows.map((row) => (
+                            <tr key={row.id} className="border-b">
+                                {row.getVisibleCells().map((cell) => (
+                                    <td key={cell.id} className="p-4 align-middle">
+                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                    </td>
+                                ))}
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+
+            {/* 分頁控制 */}
+            <div className="flex items-center justify-between px-2 py-4">
+                <div className="flex-1 text-sm text-muted-foreground">
+                    Showing {table.getRowModel().rows.length} of {dataQuery.data?.total ?? 0} rows
+                    {dataQuery.isFetching && ' (Loading...)'}
+                </div>
+                <div className="flex items-center space-x-6 lg:space-x-8">
+                    <div className="flex items-center space-x-2">
+                        <p className="text-sm font-medium">Rows per page</p>
+                        <select
+                            value={table.getState().pagination.pageSize}
+                            onChange={(e) => table.setPageSize(Number(e.target.value))}
+                            className="h-8 w-[70px] rounded-md border"
+                        >
+                            {[10, 20, 30, 40, 50].map((pageSize) => (
+                                <option key={pageSize} value={pageSize}>
+                                    {pageSize}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+                        Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.firstPage()}
+                            disabled={!table.getCanPreviousPage()}
+                        >
+                            {'<<'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.previousPage()}
+                            disabled={!table.getCanPreviousPage()}
+                        >
+                            {'<'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.nextPage()}
+                            disabled={!table.getCanNextPage()}
+                        >
+                            {'>'}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => table.lastPage()}
+                            disabled={!table.getCanNextPage()}
+                        >
+                            {'>>'}
+                        </Button>
+                    </div>
+                </div>
+            </div>
         </div>
     );
 };

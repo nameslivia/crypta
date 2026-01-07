@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import { useCoinDetails } from '@/hooks/use-coin-details';
 import Spinner from '../Spinner';
 import CoinChart from '../CoinChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,69 +8,19 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, ExternalLink, Globe } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-const API_URL = import.meta.env.VITE_COIN_API_URL;
-
-interface CoinDetails {
-    id: string;
-    name: string;
-    symbol: string;
-    image: { large: string };
-    description: { en: string };
-    market_cap_rank: number;
-    market_data: {
-        current_price: { usd: number };
-        market_cap: { usd: number };
-        high_24h: { usd: number };
-        low_24h: { usd: number };
-        price_change_24h: number;
-        price_change_percentage_24h: number;
-        circulating_supply: number;
-        total_supply: number | null;
-        ath: { usd: number };
-        ath_date: { usd: string };
-        atl: { usd: number };
-        atl_date: { usd: string };
-    };
-    links: {
-        homepage: string[];
-        blockchain_site: string[];
-    };
-    categories: string[];
-    last_updated: string;
-}
 
 const CoinDetailsPage = () => {
     const { id } = useParams<{ id: string }>();
-    const [coin, setCoin] = useState<CoinDetails | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const { data: coin, isLoading, error } = useCoinDetails(id);
 
-    useEffect(() => {
-        const fetchCoin = async () => {
-            try {
-                const res = await fetch(`${API_URL}/${id}`);
-                if (!res.ok) throw new Error('Failed to fetch coin data');
-                const data = await res.json();
-                setCoin(data);
-            } catch (err: any) {
-                console.error(err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchCoin();
-    }, [id]);
-
-    if (loading) return <Spinner size="lg" className="h-[80vh]" />;
+    if (isLoading) return <Spinner size="lg" className="h-[80vh]" />;
 
     if (error) {
         return (
             <div className="container mx-auto px-4 py-12">
                 <Alert variant="destructive">
                     <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error}</AlertDescription>
+                    <AlertDescription>{error.message}</AlertDescription>
                 </Alert>
                 <Link to="/" className="mt-4 block">
                     <Button variant="outline" className="gap-2">
@@ -194,7 +144,15 @@ const CoinDetailsPage = () => {
     );
 };
 
-const StatRow = ({ label, value, subtext, isSuccess, isError }: any) => (
+interface StatRowProps {
+    label: string;
+    value: string | number;
+    subtext?: string;
+    isSuccess?: boolean;
+    isError?: boolean;
+}
+
+const StatRow = ({ label, value, subtext, isSuccess, isError }: StatRowProps) => (
     <div className="p-4 flex flex-col">
         <span className="text-xs text-muted-foreground uppercase font-semibold">{label}</span>
         <div className="flex justify-between items-baseline mt-1">

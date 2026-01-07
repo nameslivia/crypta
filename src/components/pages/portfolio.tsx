@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useMarketData } from '@/hooks/use-market-data';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -40,13 +41,6 @@ interface Transaction {
     totalCost: number;
 }
 
-interface AvailableCoin {
-    id: string;
-    name: string;
-    symbol: string;
-    image: string;
-    current_price: number;
-}
 
 const PortfolioPage = () => {
     const formatDate = (date: Date | undefined) => {
@@ -58,9 +52,15 @@ const PortfolioPage = () => {
         return !isNaN(date.getTime());
     };
     const [portfolio, setPortfolio] = useState<Transaction[]>([]);
-    const [availableCoins, setAvailableCoins] = useState<AvailableCoin[]>([]);
-    const [currentPrices, setCurrentPrices] = useState<Record<string, number>>({});
-    const [loading, setLoading] = useState(true);
+    const { data: availableCoins = [], isLoading: loading } = useMarketData();
+
+    const currentPrices = useMemo(() => {
+        const prices: Record<string, number> = {};
+        availableCoins.forEach((coin) => {
+            prices[coin.id] = coin.current_price;
+        });
+        return prices;
+    }, [availableCoins]);
 
     const {
         register,
@@ -89,29 +89,6 @@ const PortfolioPage = () => {
         formatDate(purchaseDate ? new Date(purchaseDate) : undefined)
     );
 
-    useEffect(() => {
-        const fetchCoins = async () => {
-            try {
-                const res = await fetch(
-                    'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=100&page=1&sparkline=false'
-                );
-                const data: AvailableCoin[] = await res.json();
-                setAvailableCoins(data);
-
-                const prices: Record<string, number> = {};
-                data.forEach((coin) => {
-                    prices[coin.id] = coin.current_price;
-                });
-                setCurrentPrices(prices);
-                setLoading(false);
-            } catch (error) {
-                console.error('Failed to fetch coins:', error);
-                setLoading(false);
-            }
-        };
-
-        fetchCoins();
-    }, []);
 
     useEffect(() => {
         const savedPortfolio = localStorage.getItem('cryptoPortfolio');

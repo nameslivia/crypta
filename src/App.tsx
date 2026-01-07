@@ -11,16 +11,7 @@ import CoinsTablePage from './components/pages/coins-table-page';
 
 const API_URL = import.meta.env.VITE_COINS_API_URL;
 
-interface Coin {
-  id: string;
-  name: string;
-  symbol: string;
-  image: string;
-  current_price: number;
-  price_change_percentage_24h: number;
-  market_cap: number;
-  total_volume: number;
-}
+import type { Coin } from '@/types';
 
 const App = () => {
   const [coins, setCoins] = useState<Coin[]>([]);

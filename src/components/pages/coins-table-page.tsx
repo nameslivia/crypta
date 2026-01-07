@@ -2,7 +2,7 @@
 import { useState, useMemo } from 'react';
 import { type ColumnDef, type PaginationState, type SortingState } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
-import { type Coin } from '@/lib/mock-api';
+import { type Coin } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { ArrowUpDown } from 'lucide-react';

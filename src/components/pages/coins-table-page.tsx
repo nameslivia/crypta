@@ -236,7 +236,7 @@ const CoinsTablePage = () => {
                     </div>
                 </div>
 
-                <Pagination>
+                <Pagination className="flex justify-end">
                     <PaginationContent>
                         <PaginationItem>
                             <PaginationPrevious 

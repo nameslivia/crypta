@@ -6,7 +6,7 @@ const AboutPage = () => {
     return (
         <div className="container mx-auto px-4 py-12 max-w-4xl">
             <div className="text-center mb-12">
-                <h1 className="text-4xl font-extrabold tracking-tight mb-4">About Crypto Dash</h1>
+                <h1 className="text-4xl font-extrabold tracking-tight mb-4">About Crypta</h1>
                 <p className="text-muted-foreground text-lg">
                     Helping you stay ahead in the fast-paced world of digital assets.
                 </p>
@@ -41,7 +41,7 @@ const AboutPage = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                     <p>
-                        Crypto Dash was built with a single goal: to provide a clean, fast, and powerful interface for cryptocurrency enthusiasts.
+                        Crypta was built with a single goal: to provide a clean, fast, and powerful interface for cryptocurrency enthusiasts.
                         Whether you're a casual observer or a serious investor, we provide the tools you need to analyze the market.
                     </p>
                     <p>

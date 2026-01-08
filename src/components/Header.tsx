@@ -10,7 +10,7 @@ const Header = () => {
                         to="/"
                         className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-600 bg-clip-text text-transparent"
                     >
-                        🚀 Crypto Dash
+                        🚀 Crypta
                     </Link>
 
                     <ul className="flex items-center gap-6">

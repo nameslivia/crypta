@@ -72,7 +72,7 @@ const HomePage = ({
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
                 <div>
                     <h1 className="text-4xl font-extrabold tracking-tight mb-2">
-                        🚀 Market Overview
+                        Market Overview
                     </h1>
                     <p className="text-muted-foreground">
                         Track the latest prices and trends across the crypto market.

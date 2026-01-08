@@ -72,7 +72,7 @@ const App = () => {
       </main>
       <footer className="py-6 border-t text-center text-sm text-muted-foreground bg-muted/20">
         <div className="container mx-auto px-4">
-          &copy; {new Date().getFullYear()} Crypto Dash. All rights reserved.
+          &copy; {new Date().getFullYear()} Crypta. All rights reserved.
         </div>
       </footer>
     </div>

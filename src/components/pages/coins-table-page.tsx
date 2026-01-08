@@ -1,9 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { type Coin } from '@/types';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Checkbox } from '@/components/ui/checkbox';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import {
     Pagination,
     PaginationContent,
@@ -20,13 +22,46 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ArrowUpDown } from 'lucide-react';
+import { ArrowUpDown, Bell, MoreHorizontal, Star, TrendingUp } from 'lucide-react';
 import { useCoins } from '@/hooks/use-coins';
 import { flexRender } from '@tanstack/react-table';
 
 const CoinsTablePage = () => {
+    const [ favorites, setFavorites ] = useState<string[]>(() => {
+        const storedFavorites = localStorage.getItem('favorites');
+        return storedFavorites ? JSON.parse(storedFavorites) : [];
+    });
+
+    const toggleFavorite = (coinId: string) => {
+        setFavorites((prevFavorites) => {
+            const newFavorites = prevFavorites.includes(coinId)
+                ? prevFavorites.filter((id) => id !== coinId)
+                : [...prevFavorites, coinId];
+            localStorage.setItem('favorites', JSON.stringify(newFavorites));
+            return newFavorites;
+        });
+    };
+
+    const isFavorite = (coinId: string) => favorites.includes(coinId);
     const columns = useMemo<ColumnDef<Coin>[]>(
         () => [
+            {
+                id: 'select',
+                header: ({ table }) => (
+                    <Checkbox
+                        checked={table.getIsAllPageRowsSelected()}
+                        onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                ),
+                cell: ({ row }) => (
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={value => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                    />
+                ),
+            },
             {
                 accessorKey: 'name',
                 header: ({ column }) => {
@@ -123,8 +158,53 @@ const CoinsTablePage = () => {
                     return <div className="text-right">{formatted}</div>;
                 },
             },
+            {
+                id: 'actions',
+                header: () => <div className="text-right">Actions</div>,
+                cell: ({ row }) => {
+                    const coin = row.original;
+                    const isStarred = isFavorite(coin.id);
+                    return (
+                        <div className="text-right">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" className="h-8 w-8 p-0">
+                                        <span className="sr-only">Open menu</span>
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent>
+                                    <DropdownMenuLabel>{coin.name}</DropdownMenuLabel>
+                                    <DropdownMenuSeparator/>
+                                    <DropdownMenuItem onClick={() => toggleFavorite(coin.id)}>
+                                        <Star 
+                                           className={`mr-2 h-4 w-4 ${isStarred ? 'fill-yellow-400 text-yellow-400' : ''}`} />
+                                        {isStarred ? 'Remove from favorites' : 'Add to favorites'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => console.log('View chart', coin)}>
+                                        <TrendingUp className="mr-2 h-4 w-4" />
+                                        View chart
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => console.log('Set price alert', coin)}>
+                                        <Bell className="mr-2 h-4 w-4" />
+                                        Set price alert
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator/>
+                                    <DropdownMenuItem 
+                                        onClick={() => {
+                                        navigator.clipboard.writeText(coin.id);
+                                        console.log('Copied ID:', coin.id);
+                                    }}>
+                                        Copy coin ID
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    )
+                }
+            },
         ],
-        []
+        [favorites, isFavorite, toggleFavorite]
     );
 
     const { table, dataQuery, globalFilter, setGlobalFilter } = useCoins(columns);
@@ -172,6 +252,9 @@ const CoinsTablePage = () => {
                             Array.from({ length: 10 }).map((_, index) => (
                                 <tr key={index} className="border-b">
                                     <td className="p-4">
+                                        <Skeleton className="h-4 w-4" />
+                                    </td>
+                                    <td className="p-4">
                                         <div className="flex items-center gap-2">
                                             <Skeleton className="h-6 w-6 rounded-full" />
                                             <Skeleton className="h-4 w-32" />
@@ -186,6 +269,9 @@ const CoinsTablePage = () => {
                                     </td>
                                     <td className="p-4">
                                         <Skeleton className="h-4 w-20 ml-auto" />
+                                    </td>
+                                    <td className="p-4">
+                                        <Skeleton className="h-8 w-8 ml-auto" />
                                     </td>
                                 </tr>
                             ))

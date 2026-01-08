@@ -20,6 +20,8 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
   
   const [globalFilter, setGlobalFilter] = useState('');
 
+  const [rowSelection, setRowSelection] = useState({}); 
+
   const dataQuery = useQuery({
     queryKey: ['coins', pagination, sorting, globalFilter],
     queryFn: () => fetchCoinsServer({
@@ -37,10 +39,13 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
     data: dataQuery.data?.data ?? defaultData,
     columns,
     rowCount: dataQuery.data?.total,
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
     state: {
       pagination,
       sorting,
       globalFilter,
+      rowSelection,
     },
     onPaginationChange: setPagination,
     onSortingChange: setSorting,

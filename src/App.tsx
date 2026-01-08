@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { useState, type ReactNode } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import Header from './components/Header';
 import HomePage from './components/pages/home';
 import AboutPage from './components/pages/about';
@@ -8,38 +8,36 @@ import CoinDetailsPage from './components/pages/coin-details';
 import TrendsPage from './components/pages/trends';
 import PortfolioPage from './components/pages/portfolio';
 import CoinsTablePage from './components/pages/coins-table-page';
+import LoginPage from './components/pages/auth/login-page';
+import RegisterPage from './components/pages/auth/register-page';
+import { AuthProvider } from './components/providers/auth-provider';
+import { useAuth } from './hooks/use-auth';
+import { useMarketData } from './hooks/use-market-data';
 
-const API_URL = import.meta.env.VITE_COINS_API_URL;
 
-import type { Coin } from '@/types';
+// Protected Route Component
+const RequireAuth = ({ children }: { children: ReactNode }) => {
+  const { isAuthenticated, isLoading } = useAuth();
+  const location = useLocation();
 
-const App = () => {
-  const [coins, setCoins] = useState<Coin[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  if (isLoading) {
+    return <div className="h-screen flex items-center justify-center">Loading...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  return children;
+};
+
+const AppContent = () => {
   const [limit, setLimit] = useState(10);
   const [filter, setFilter] = useState('');
   const [sortBy, setSortBy] = useState('market_cap_desc');
 
-  useEffect(() => {
-    const fetchCoins = async () => {
-      try {
-        setLoading(true);
-        const res = await fetch(
-          `${API_URL}&order=market_cap_desc&per_page=${limit}&page=1&sparkline=false`
-        );
-        if (!res.ok) throw new Error('Failed to fetch data');
-        const data = await res.json();
-        setCoins(data);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCoins();
-  }, [limit]);
+  const { data: coins = [], isLoading: loading, error: queryError } = useMarketData(limit);
+  const error = queryError ? (queryError as Error).message : null;
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -65,8 +63,17 @@ const App = () => {
           <Route path='/about' element={<AboutPage />} />
           <Route path='/coin/:id' element={<CoinDetailsPage />} />
           <Route path='/trends' element={<TrendsPage />} />
-          <Route path='/portfolio' element={<PortfolioPage />} />
+          <Route
+            path='/portfolio'
+            element={
+              <RequireAuth>
+                <PortfolioPage />
+              </RequireAuth>
+            }
+          />
           <Route path='/coins-table' element={<CoinsTablePage />} />
+          <Route path='/login' element={<LoginPage />} />
+          <Route path='/register' element={<RegisterPage />} />
           <Route path='*' element={<NotFoundPage />} />
         </Routes>
       </main>
@@ -76,6 +83,14 @@ const App = () => {
         </div>
       </footer>
     </div>
+  );
+};
+
+const App = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 

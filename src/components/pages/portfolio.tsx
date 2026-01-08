@@ -63,7 +63,14 @@ const PortfolioPage = () => {
         return !isNaN(date.getTime());
     };
     const [portfolio, setPortfolio] = useState<Transaction[]>([]);
-    const { data: availableCoins = [], isLoading: loading } = useMarketData();
+
+    const {
+        data: availableCoins = [],
+        isLoading: loading,
+        error,
+        isError,
+        refetch
+    } = useMarketData();
 
     const currentPrices = useMemo(() => {
         const prices: Record<string, number> = {};
@@ -103,8 +110,15 @@ const PortfolioPage = () => {
 
     useEffect(() => {
         const savedPortfolio = localStorage.getItem('cryptoPortfolio');
+
         if (savedPortfolio) {
-            setPortfolio(JSON.parse(savedPortfolio));
+            try {
+                setPortfolio(JSON.parse(savedPortfolio));
+            } catch (error) {
+                console.error("Failed to parse portfolio from local storage", error);
+                // Optionally clear the invalid data so it doesn't persist
+                // localStorage.removeItem('cryptoPortfolio');
+            }
         }
     }, []);
 
@@ -166,6 +180,20 @@ const PortfolioPage = () => {
         return (
             <div className="flex h-[80vh] items-center justify-center">
                 <p className="text-xl font-medium animate-pulse">Loading market data...</p>
+            </div>
+        );
+    }
+
+    if (isError) {
+        return (
+            <div className="flex flex-col h-[80vh] items-center justify-center gap-4">
+                <div className="text-center text-red-500">
+                    <p className="text-xl font-bold">Error loading market data</p>
+                    <p className="text-sm">{(error as Error)?.message || 'Please check your internet connection and try again.'}</p>
+                </div>
+                <Button onClick={() => refetch()} variant="outline">
+                    Try Again
+                </Button>
             </div>
         );
     }

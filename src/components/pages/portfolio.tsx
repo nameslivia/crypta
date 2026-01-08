@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useMarketData } from '@/hooks/use-market-data';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { portfolioSchema, type PortfolioFormData } from '@/validations/portfolio';
+import { selectTransactions, addTransaction, deleteTransaction } from '@/store/portfolio-slice';
 
 interface Transaction {
     id: string;
@@ -54,6 +56,10 @@ interface Transaction {
 
 
 const PortfolioPage = () => {
+    const dispatch = useDispatch();
+
+    const portfolio = useSelector(selectTransactions);
+
     const formatDate = (date: Date | undefined) => {
         if (!date) return '';
         return date.toLocaleDateString('en-US', { year: 'numeric', month: '2-digit', day: '2-digit' });
@@ -62,7 +68,7 @@ const PortfolioPage = () => {
         if (!date) return false;
         return !isNaN(date.getTime());
     };
-    const [portfolio, setPortfolio] = useState<Transaction[]>([]);
+    // const [portfolio, setPortfolio] = useState<Transaction[]>([]);
 
     const {
         data: availableCoins = [],
@@ -80,6 +86,7 @@ const PortfolioPage = () => {
         return prices;
     }, [availableCoins]);
 
+    // React Hook Form
     const {
         register,
         handleSubmit,
@@ -99,6 +106,7 @@ const PortfolioPage = () => {
 
     const selectedCoinId = watch('coinId');
     const purchaseDate = watch('purchaseDate');
+    // Calendar
     const [calendarOpen, setCalendarOpen] = useState(false);
     const [calendarMonth, setCalendarMonth] = useState<Date | undefined>(
         purchaseDate ? new Date(purchaseDate) : undefined
@@ -108,24 +116,24 @@ const PortfolioPage = () => {
     );
 
 
-    useEffect(() => {
-        const savedPortfolio = localStorage.getItem('cryptoPortfolio');
+    // useEffect(() => {
+    //     const savedPortfolio = localStorage.getItem('cryptoPortfolio');
 
-        if (savedPortfolio) {
-            try {
-                setPortfolio(JSON.parse(savedPortfolio));
-            } catch (error) {
-                console.error("Failed to parse portfolio from local storage", error);
-                // Optionally clear the invalid data so it doesn't persist
-                // localStorage.removeItem('cryptoPortfolio');
-            }
-        }
-    }, []);
+    //     if (savedPortfolio) {
+    //         try {
+    //             setPortfolio(JSON.parse(savedPortfolio));
+    //         } catch (error) {
+    //             console.error("Failed to parse portfolio from local storage", error);
+    //             // Optionally clear the invalid data so it doesn't persist
+    //             // localStorage.removeItem('cryptoPortfolio');
+    //         }
+    //     }
+    // }, []);
 
-    const savePortfolio = (newPortfolio: Transaction[]) => {
-        localStorage.setItem('cryptoPortfolio', JSON.stringify(newPortfolio));
-        setPortfolio(newPortfolio);
-    };
+    // const savePortfolio = (newPortfolio: Transaction[]) => {
+    //     localStorage.setItem('cryptoPortfolio', JSON.stringify(newPortfolio));
+    //     setPortfolio(newPortfolio);
+    // };
 
     const onSubmit = (data: PortfolioFormData) => {
         const selectedCoin = availableCoins.find((coin) => coin.id === data.coinId);
@@ -143,15 +151,24 @@ const PortfolioPage = () => {
             totalCost: data.amount * data.purchasePrice,
         };
 
-        const updatedPortfolio = [...portfolio, newTransaction];
-        savePortfolio(updatedPortfolio);
+        // Redux dispatch
+        dispatch(addTransaction(newTransaction));
         reset();
     };
 
-    const deleteTransaction = (id: string) => {
-        const updatedPortfolio = portfolio.filter((item) => item.id !== id);
-        savePortfolio(updatedPortfolio);
+    const handleDeleteTransaction = (id: string) => {
+        dispatch(deleteTransaction(id));
     };
+
+    //     const updatedPortfolio = [...portfolio, newTransaction];
+    //     savePortfolio(updatedPortfolio);
+    //     reset();
+    // };
+
+    // const deleteTransaction = (id: string) => {
+    //     const updatedPortfolio = portfolio.filter((item) => item.id !== id);
+    //     savePortfolio(updatedPortfolio);
+    // };
 
     const calculateStats = () => {
         let totalInvested = 0;
@@ -459,7 +476,7 @@ const PortfolioPage = () => {
                                                                     </AlertDialogHeader>
                                                                     <AlertDialogFooter>
                                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => deleteTransaction(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                                                        <AlertDialogAction onClick={() => handleDeleteTransaction(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                                                             Delete
                                                                         </AlertDialogAction>
                                                                     </AlertDialogFooter>

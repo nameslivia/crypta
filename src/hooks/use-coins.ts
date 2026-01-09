@@ -15,6 +15,7 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
     pageIndex: 0,
     pageSize: 10,
   });
+  
   const [sorting, setSorting] = useState<SortingState>([]);
   const [globalFilter, setGlobalFilter] = useState('');
   
@@ -23,14 +24,14 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
     const stored = localStorage.getItem('selectedCoins');
     return stored ? new Set(JSON.parse(stored)) : new Set();
   });
-
+  
   // 存到 localStorage
   useEffect(() => {
     localStorage.setItem('selectedCoins', JSON.stringify(Array.from(selectedCoinIds)));
   }, [selectedCoinIds]);
-
+  
   const [rowSelection, setRowSelection] = useState({});
-
+  
   const dataQuery = useQuery({
     queryKey: ['coins', pagination, sorting, globalFilter],
     queryFn: () => fetchCoinsServer({
@@ -41,49 +42,32 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
     }),
     placeholderData: keepPreviousData,
   });
-
+  
   const defaultData = useMemo(() => [], []);
-
+  
   // 數據加載後，恢復勾選狀態
   useEffect(() => {
     if (dataQuery.data?.data) {
       const newRowSelection: Record<string, boolean> = {};
-      dataQuery.data.data.forEach((coin, index) => {
-        if (selectedCoinIds.has(coin.id)) {
-          newRowSelection[index] = true;
-        }
+      // 因為用了 getRowId，key 就是 coin.id
+      selectedCoinIds.forEach((id) => {
+        newRowSelection[id] = true;
       });
       setRowSelection(newRowSelection);
     }
-  }, [dataQuery.data, selectedCoinIds]);
-
+  }, [dataQuery.data?.data, selectedCoinIds]);
   const table = useReactTable({
     data: dataQuery.data?.data ?? defaultData,
     columns,
     rowCount: dataQuery.data?.total,
     enableRowSelection: true,
+    getRowId: (row) => row.id,
     onRowSelectionChange: (updater) => {
       setRowSelection((old) => {
         const newSelection = typeof updater === 'function' ? updater(old) : updater;
         
-        // 同步更新 selectedCoinIds
-        if (dataQuery.data?.data) {
-          const newSelectedIds = new Set(selectedCoinIds);
-          
-          Object.keys(newSelection).forEach((key) => {
-            const index = parseInt(key);
-            const coin = dataQuery.data.data[index];
-            if (coin) {
-              if (newSelection[key]) {
-                newSelectedIds.add(coin.id);
-              } else {
-                newSelectedIds.delete(coin.id);
-              }
-            }
-          });
-          
-          setSelectedCoinIds(newSelectedIds);
-        }
+        // Object.keys(newSelection) 就是所有選中的 coin.id
+        setSelectedCoinIds(new Set(Object.keys(newSelection)));
         
         return newSelection;
       });
@@ -102,7 +86,7 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
     manualSorting: true,
     manualFiltering: true,
   });
-
+  
   return {
     table,
     dataQuery,

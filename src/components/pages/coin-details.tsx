@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { useCoinDetails } from '@/hooks/use-coin-details';
-import Spinner from '../Spinner';
-import CoinChart from '../CoinChart';
+import Spinner from '../spinner';
+import CoinChart from '../coin-chart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';

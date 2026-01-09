@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { type Coin } from '@/types';
 import { Input } from '@/components/ui/input';
@@ -25,12 +25,22 @@ import {
 import { ArrowUpDown, Bell, MoreHorizontal, Star, TrendingUp } from 'lucide-react';
 import { useCoins } from '@/hooks/use-coins';
 import { flexRender } from '@tanstack/react-table';
+import { CoinChartDialog } from '@/components/coin-chart-dialog';
 
 const CoinsTablePage = () => {
     const [ favorites, setFavorites ] = useState<string[]>(() => {
         const storedFavorites = localStorage.getItem('favorites');
         return storedFavorites ? JSON.parse(storedFavorites) : [];
     });
+
+    const [chartDialogOpen, setChartDialogOpen] = useState(false);
+    const [selectedCoin, setSelectedCoin] = useState<Coin | null>(null);
+    
+    // 開啟 chart 的函式
+    const handleViewChart = useCallback((coin: Coin) => {
+        setSelectedCoin(coin);
+        setChartDialogOpen(true);
+    }, []);
 
     const toggleFavorite = (coinId: string) => {
         setFavorites((prevFavorites) => {
@@ -181,7 +191,7 @@ const CoinsTablePage = () => {
                                            className={`mr-2 h-4 w-4 ${isStarred ? 'fill-yellow-400 text-yellow-400' : ''}`} />
                                         {isStarred ? 'Remove from favorites' : 'Add to favorites'}
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => console.log('View chart', coin)}>
+                                    <DropdownMenuItem onClick={() => handleViewChart(coin)}>
                                         <TrendingUp className="mr-2 h-4 w-4" />
                                         View chart
                                     </DropdownMenuItem>
@@ -204,7 +214,7 @@ const CoinsTablePage = () => {
                 }
             },
         ],
-        [favorites, isFavorite, toggleFavorite]
+        [favorites, isFavorite, toggleFavorite, handleViewChart]
     );
 
     const { table, dataQuery, globalFilter, setGlobalFilter } = useCoins(columns);
@@ -409,6 +419,11 @@ const CoinsTablePage = () => {
                     </PaginationContent>
                 </Pagination>
             </div>
+            <CoinChartDialog 
+                coin={selectedCoin}
+                open={chartDialogOpen}
+                onOpenChange={setChartDialogOpen}
+            />
         </div>
     );
 };

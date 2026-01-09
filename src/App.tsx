@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Header from './components/Header';
+import Header from './components/header'
 import HomePage from './components/pages/home';
 import AboutPage from './components/pages/about';
 import NotFoundPage from './components/pages/not-found';

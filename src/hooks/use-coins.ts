@@ -1,5 +1,5 @@
 import { useQuery, keepPreviousData } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { 
   useReactTable, 
   getCoreRowModel,
@@ -15,12 +15,21 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
     pageIndex: 0,
     pageSize: 10,
   });
-
   const [sorting, setSorting] = useState<SortingState>([]);
-  
   const [globalFilter, setGlobalFilter] = useState('');
+  
+  // 從 localStorage 初始化
+  const [selectedCoinIds, setSelectedCoinIds] = useState<Set<string>>(() => {
+    const stored = localStorage.getItem('selectedCoins');
+    return stored ? new Set(JSON.parse(stored)) : new Set();
+  });
 
-  const [rowSelection, setRowSelection] = useState({}); 
+  // 存到 localStorage
+  useEffect(() => {
+    localStorage.setItem('selectedCoins', JSON.stringify(Array.from(selectedCoinIds)));
+  }, [selectedCoinIds]);
+
+  const [rowSelection, setRowSelection] = useState({});
 
   const dataQuery = useQuery({
     queryKey: ['coins', pagination, sorting, globalFilter],
@@ -35,12 +44,50 @@ export function useCoins(columns: ColumnDef<Coin>[]) {
 
   const defaultData = useMemo(() => [], []);
 
+  // 數據加載後，恢復勾選狀態
+  useEffect(() => {
+    if (dataQuery.data?.data) {
+      const newRowSelection: Record<string, boolean> = {};
+      dataQuery.data.data.forEach((coin, index) => {
+        if (selectedCoinIds.has(coin.id)) {
+          newRowSelection[index] = true;
+        }
+      });
+      setRowSelection(newRowSelection);
+    }
+  }, [dataQuery.data, selectedCoinIds]);
+
   const table = useReactTable({
     data: dataQuery.data?.data ?? defaultData,
     columns,
     rowCount: dataQuery.data?.total,
     enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
+    onRowSelectionChange: (updater) => {
+      setRowSelection((old) => {
+        const newSelection = typeof updater === 'function' ? updater(old) : updater;
+        
+        // 同步更新 selectedCoinIds
+        if (dataQuery.data?.data) {
+          const newSelectedIds = new Set(selectedCoinIds);
+          
+          Object.keys(newSelection).forEach((key) => {
+            const index = parseInt(key);
+            const coin = dataQuery.data.data[index];
+            if (coin) {
+              if (newSelection[key]) {
+                newSelectedIds.add(coin.id);
+              } else {
+                newSelectedIds.delete(coin.id);
+              }
+            }
+          });
+          
+          setSelectedCoinIds(newSelectedIds);
+        }
+        
+        return newSelection;
+      });
+    },
     state: {
       pagination,
       sorting,

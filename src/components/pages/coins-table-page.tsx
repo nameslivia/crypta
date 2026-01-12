@@ -22,7 +22,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { ArrowUpDown, Bell, MoreHorizontal, Star, TrendingUp } from 'lucide-react';
+import { ArrowUp, ArrowDown, ArrowUpDown, Bell, MoreHorizontal, Star, TrendingUp } from 'lucide-react';
 import { useCoins } from '@/hooks/use-coins';
 import { flexRender } from '@tanstack/react-table';
 import { CoinChartDialog } from '@/components/coin-chart-dialog';
@@ -75,13 +75,20 @@ const CoinsTablePage = () => {
             {
                 accessorKey: 'name',
                 header: ({ column }) => {
+                    const isSorted = column.getIsSorted();
                     return (
                         <Button
                             variant="ghost"
                             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                         >
                             Coin Name
-                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                            {isSorted === 'asc' ? (
+                                <ArrowUp className="ml-2 h-4 w-4" />
+                            ) : isSorted === 'desc' ? (
+                                <ArrowDown className="ml-2 h-4 w-4" />
+                            ) : (
+                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                            )}
                         </Button>
                     );
                 },
@@ -96,6 +103,7 @@ const CoinsTablePage = () => {
             {
                 accessorKey: 'current_price',
                 header: ({ column }) => {
+                    const isSorted = column.getIsSorted();
                     return (
                         <div className="text-right">
                             <Button
@@ -103,7 +111,13 @@ const CoinsTablePage = () => {
                                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                             >
                                 Price
-                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                {isSorted === 'asc' ? (
+                                    <ArrowUp className="ml-2 h-4 w-4" />
+                                ) : isSorted === 'desc' ? (
+                                    <ArrowDown className="ml-2 h-4 w-4" />
+                                ) : (
+                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                )}
                             </Button>
                         </div>
                     );
@@ -120,6 +134,7 @@ const CoinsTablePage = () => {
             {
                 accessorKey: 'price_change_percentage_24h',
                 header: ({ column }) => {
+                    const isSorted = column.getIsSorted();
                     return (
                         <div className="text-right">
                             <Button
@@ -127,7 +142,13 @@ const CoinsTablePage = () => {
                                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                             >
                                 24h Change
-                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                {isSorted === 'asc' ? (
+                                    <ArrowUp className="ml-2 h-4 w-4" />
+                                ) : isSorted === 'desc' ? (
+                                    <ArrowDown className="ml-2 h-4 w-4" />
+                                ) : (
+                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                )}
                             </Button>
                         </div>
                     );
@@ -145,6 +166,7 @@ const CoinsTablePage = () => {
             {
                 accessorKey: 'market_cap',
                 header: ({ column }) => {
+                    const isSorted = column.getIsSorted();
                     return (
                         <div className="text-right">
                             <Button
@@ -152,7 +174,13 @@ const CoinsTablePage = () => {
                                 onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
                             >
                                 Market Cap
-                                <ArrowUpDown className="ml-2 h-4 w-4" />
+                                {isSorted === 'asc' ? (
+                                    <ArrowUp className="ml-2 h-4 w-4" />
+                                ) : isSorted === 'desc' ? (
+                                    <ArrowDown className="ml-2 h-4 w-4" />
+                                ) : (
+                                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                                )}
                             </Button>
                         </div>
                     );

@@ -4,7 +4,6 @@ import { useMarketData } from '@/hooks/use-market-data';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { type ColumnDef } from '@tanstack/react-table';
-import { flexRender } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
@@ -12,14 +11,6 @@ import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow
-} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import {
     Select,
@@ -28,15 +19,6 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
-
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-} from '@/components/ui/pagination';
 import { Trash2, TrendingUp, TrendingDown, PlusCircle } from 'lucide-react';
 import {
     AlertDialog,
@@ -49,6 +31,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { DataTable, DataTableFilter, DataTablePagination } from '@/components/data-table/index';
 
 import { portfolioSchema, type PortfolioFormData } from '@/validations/portfolio';
 import { addTransaction, deleteTransaction } from '@/store/portfolio-slice';
@@ -494,16 +477,16 @@ const PortfolioPage = () => {
                     </Card>
                 </div>
 
-                {/* List Section - 使用 TanStack Table */}
+                {/* List Section - 使用 DataTable 組件 */}
                 <div className="lg:col-span-2">
                     <Card>
                         <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>My Holdings</CardTitle>
                             {transactions.length > 0 && (
-                                <Input
-                                    placeholder="Search holdings..."
+                                <DataTableFilter
                                     value={globalFilter}
-                                    onChange={(e) => setGlobalFilter(e.target.value)}
+                                    onChange={setGlobalFilter}
+                                    placeholder="Search holdings..."
                                     className="max-w-xs"
                                 />
                             )}
@@ -516,83 +499,17 @@ const PortfolioPage = () => {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="rounded-md border overflow-hidden">
-                                        <Table>
-                                            <TableHeader className="bg-muted/50">
-                                                {table.getHeaderGroups().map((headerGroup) => (
-                                                    <TableRow key={headerGroup.id}>
-                                                        {headerGroup.headers.map((header) => (
-                                                            <TableHead key={header.id}>
-                                                                {header.isPlaceholder
-                                                                    ? null
-                                                                    : flexRender(
-                                                                        header.column.columnDef.header,
-                                                                        header.getContext()
-                                                                    )}
-                                                            </TableHead>
-                                                        ))}
-                                                    </TableRow>
-                                                ))}
-                                            </TableHeader>
-                                            <TableBody>
-                                                {table.getRowModel().rows.length ? (
-                                                    table.getRowModel().rows.map((row) => (
-                                                        <TableRow key={row.id}>
-                                                            {row.getVisibleCells().map((cell) => (
-                                                                <TableCell key={cell.id}>
-                                                                    {flexRender(
-                                                                        cell.column.columnDef.cell,
-                                                                        cell.getContext()
-                                                                    )}
-                                                                </TableCell>
-                                                            ))}
-                                                        </TableRow>
-                                                    ))
-                                                ) : (
-                                                    <TableRow>
-                                                        <TableCell colSpan={columns.length} className="h-24 text-center">
-                                                            No results found.
-                                                        </TableCell>
-                                                    </TableRow>
-                                                )}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
+                                    <DataTable
+                                        table={table}
+                                        columns={columns}
+                                    />
 
-                                    {/* Pagination */}
                                     {table.getPageCount() > 1 && (
-                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
-                                            <div className="text-sm text-muted-foreground">
-                                                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
-                                            </div>
-                                            <Pagination className="flex justify-end w-auto mx-0">
-                                                <PaginationContent>
-                                                    <PaginationItem>
-                                                        <PaginationPrevious
-                                                            onClick={() => table.previousPage()}
-                                                            className={!table.getCanPreviousPage() ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                                        />
-                                                    </PaginationItem>
-                                                    {Array.from({ length: table.getPageCount() }, (_, i) => i + 1).map((page) => (
-                                                        <PaginationItem key={page}>
-                                                            <PaginationLink
-                                                                onClick={() => table.setPageIndex(page - 1)}
-                                                                isActive={table.getState().pagination.pageIndex === page - 1}
-                                                                className="cursor-pointer"
-                                                            >
-                                                                {page}
-                                                            </PaginationLink>
-                                                        </PaginationItem>
-                                                    ))}
-                                                    <PaginationItem>
-                                                        <PaginationNext
-                                                            onClick={() => table.nextPage()}
-                                                            className={!table.getCanNextPage() ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
-                                                        />
-                                                    </PaginationItem>
-                                                </PaginationContent>
-                                            </Pagination>
-                                        </div>
+                                        <DataTablePagination
+                                            table={table}
+                                            totalRows={transactions.length}
+                                            showPageSizeSelector={false}
+                                        />
                                     )}
                                 </>
                             )}

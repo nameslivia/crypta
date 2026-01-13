@@ -1,16 +1,16 @@
 import { useState, type ReactNode } from 'react';
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import Header from './components/header'
-import HomePage from './components/pages/home';
-import AboutPage from './components/pages/about';
-import NotFoundPage from './components/pages/not-found';
-import CoinDetailsPage from './components/pages/coin-details';
-import TrendsPage from './components/pages/trends';
-import PortfolioPage from './components/pages/portfolio';
-import CoinsTablePage from './components/pages/coins-table-page';
-import LoginPage from './components/pages/auth/login-page';
-import RegisterPage from './components/pages/auth/register-page';
-import { AuthProvider } from './components/providers/auth-provider';
+import Header from './components/layout/header';
+import HomePage from './pages/home';
+import AboutPage from './pages/about';
+import NotFoundPage from './pages/not-found';
+import CoinDetailsPage from './pages/coin-details';
+import TrendsPage from './pages/trends';
+import PortfolioPage from './pages/portfolio';
+import CoinsTablePage from './pages/coins-table-page';
+import LoginPage from './features/auth/login-page';
+import RegisterPage from './features/auth/register-page';
+import { AuthProvider } from './features/auth/provider';
 import { useAuth } from './hooks/use-auth';
 import { useMarketData } from './hooks/use-market-data';
 

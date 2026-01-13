@@ -25,7 +25,7 @@ import {
 import { ArrowUp, ArrowDown, ArrowUpDown, Bell, MoreHorizontal, Star, TrendingUp } from 'lucide-react';
 import { useCoins } from '@/hooks/use-coins';
 import { flexRender } from '@tanstack/react-table';
-import { CoinChartDialog } from '@/components/coin-chart-dialog';
+import { CoinChartDialog } from '@/features/coin/coin-chart-dialog';
 
 const CoinsTablePage = () => {
     const [ favorites, setFavorites ] = useState<string[]>(() => {

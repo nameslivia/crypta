@@ -1,8 +1,8 @@
-import CoinCard from '../coin-card';
-import LimitSelector from '../limit-selector';
-import FilterInput from '../filter-input';
-import SortSelector from '../sort-selector';
-import Spinner from '../spinner';
+import CoinCard from '@/features/coin/coin-card';
+import LimitSelector from '@/components/limit-selector';
+import FilterInput from '@/components/filter-input';
+import SortSelector from '@/components/sort-selector';
+import Spinner from '@/components/spinner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
 

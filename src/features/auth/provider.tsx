@@ -1,5 +1,5 @@
 import { useState, useEffect, type ReactNode } from 'react';
-import { AuthContext, type User } from '@/context/auth-context';
+import { AuthContext, type User } from '@/features/auth/context';
 
 /* 
   Mock Auth Implementation

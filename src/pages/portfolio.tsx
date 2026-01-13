@@ -1,15 +1,17 @@
-import { useState, useMemo } from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useState, useMemo, useCallback } from 'react';
+import { useDispatch } from 'react-redux';
 import { useMarketData } from '@/hooks/use-market-data';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { type ColumnDef } from '@tanstack/react-table';
+import { flexRender } from '@tanstack/react-table';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Field, FieldLabel, FieldError, FieldDescription } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { CalendarIcon } from 'lucide-react';
+import { CalendarIcon, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import {
     Table,
     TableBody,
@@ -26,6 +28,15 @@ import {
     SelectTrigger,
     SelectValue
 } from '@/components/ui/select';
+
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+} from '@/components/ui/pagination';
 import { Trash2, TrendingUp, TrendingDown, PlusCircle } from 'lucide-react';
 import {
     AlertDialog,
@@ -40,25 +51,12 @@ import {
 } from "@/components/ui/alert-dialog";
 
 import { portfolioSchema, type PortfolioFormData } from '@/validations/portfolio';
-import { selectTransactions, addTransaction, deleteTransaction } from '@/store/portfolio-slice';
-
-interface Transaction {
-    id: string;
-    coinId: string;
-    coinName: string;
-    coinSymbol: string;
-    coinImage: string;
-    amount: number;
-    purchasePrice: number;
-    purchaseDate: string;
-    totalCost: number;
-}
+import { addTransaction, deleteTransaction } from '@/store/portfolio-slice';
+import { usePortfolioTable, type Transaction } from '@/hooks/use-portfolio-table';
 
 
 const PortfolioPage = () => {
     const dispatch = useDispatch();
-
-    const portfolio = useSelector(selectTransactions);
 
     const formatDate = (date: Date | undefined) => {
         if (!date) return '';
@@ -85,6 +83,139 @@ const PortfolioPage = () => {
         });
         return prices;
     }, [availableCoins]);
+
+    // Delete handler
+    const handleDeleteTransaction = useCallback((id: string) => {
+        dispatch(deleteTransaction(id));
+    }, [dispatch]);
+
+    // TanStack Table columns
+    const columns: ColumnDef<Transaction>[] = useMemo(
+        () => [
+            {
+                accessorKey: 'coinName',
+                header: ({ column }) => (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="-ml-4"
+                    >
+                        Coin
+                        {column.getIsSorted() === 'asc' ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                        ) : column.getIsSorted() === 'desc' ? (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                        ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                    </Button>
+                ),
+                cell: ({ row }) => (
+                    <div className="flex items-center gap-3">
+                        <img src={row.original.coinImage} alt="" className="w-8 h-8 rounded-full" />
+                        <div>
+                            <p className="font-semibold text-sm">{row.original.coinName}</p>
+                            <p className="text-xs text-muted-foreground uppercase">{row.original.coinSymbol}</p>
+                        </div>
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'amount',
+                header: ({ column }) => (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+                        className="w-full justify-end -mr-4"
+                    >
+                        Amount
+                        {column.getIsSorted() === 'asc' ? (
+                            <ArrowUp className="ml-2 h-4 w-4" />
+                        ) : column.getIsSorted() === 'desc' ? (
+                            <ArrowDown className="ml-2 h-4 w-4" />
+                        ) : (
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                        )}
+                    </Button>
+                ),
+                cell: ({ row }) => (
+                    <div className="text-right font-mono text-sm">
+                        {row.original.amount.toLocaleString(undefined, { maximumFractionDigits: 8 })}
+                    </div>
+                ),
+            },
+            {
+                accessorKey: 'purchasePrice',
+                header: () => <div className="text-right">Price Paid</div>,
+                cell: ({ row }) => (
+                    <div className="text-right text-sm">
+                        ${row.original.purchasePrice.toLocaleString()}
+                    </div>
+                ),
+            },
+            {
+                id: 'profitLoss',
+                header: () => <div className="text-right">P/L</div>,
+                cell: ({ row }) => {
+                    const currentPrice = currentPrices[row.original.coinId] || 0;
+                    const currentValue = row.original.amount * currentPrice;
+                    const profitLoss = currentValue - row.original.totalCost;
+                    const profitLossPercent = row.original.totalCost > 0 ? (profitLoss / row.original.totalCost) * 100 : 0;
+
+                    return (
+                        <div className="flex flex-col items-end">
+                            <span className={profitLoss >= 0 ? "text-green-500 font-medium text-sm" : "text-red-500 font-medium text-sm"}>
+                                {profitLoss >= 0 ? '+' : ''}${Math.abs(profitLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                            </span>
+                            <Badge variant={profitLoss >= 0 ? "default" : "destructive"} className="text-[10px] px-1 h-4">
+                                {profitLoss >= 0 ? '+' : ''}{profitLossPercent.toFixed(2)}%
+                            </Badge>
+                        </div>
+                    );
+                },
+            },
+            {
+                id: 'actions',
+                header: () => <div className="text-center">Action</div>,
+                cell: ({ row }) => (
+                    <div className="text-center">
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="text-muted-foreground hover:text-destructive"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently remove this transaction from your portfolio.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => handleDeleteTransaction(row.original.id)}
+                                        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                        Delete
+                                    </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                ),
+            },
+        ],
+        [currentPrices, handleDeleteTransaction]
+    );
+
+    // usePortfolioTable hook
+    const { table, transactions, globalFilter, setGlobalFilter } = usePortfolioTable(columns);
 
     // React Hook Form
     const {
@@ -115,26 +246,6 @@ const PortfolioPage = () => {
         formatDate(purchaseDate ? new Date(purchaseDate) : undefined)
     );
 
-
-    // useEffect(() => {
-    //     const savedPortfolio = localStorage.getItem('cryptoPortfolio');
-
-    //     if (savedPortfolio) {
-    //         try {
-    //             setPortfolio(JSON.parse(savedPortfolio));
-    //         } catch (error) {
-    //             console.error("Failed to parse portfolio from local storage", error);
-    //             // Optionally clear the invalid data so it doesn't persist
-    //             // localStorage.removeItem('cryptoPortfolio');
-    //         }
-    //     }
-    // }, []);
-
-    // const savePortfolio = (newPortfolio: Transaction[]) => {
-    //     localStorage.setItem('cryptoPortfolio', JSON.stringify(newPortfolio));
-    //     setPortfolio(newPortfolio);
-    // };
-
     const onSubmit = (data: PortfolioFormData) => {
         const selectedCoin = availableCoins.find((coin) => coin.id === data.coinId);
         if (!selectedCoin) return;
@@ -156,25 +267,12 @@ const PortfolioPage = () => {
         reset();
     };
 
-    const handleDeleteTransaction = (id: string) => {
-        dispatch(deleteTransaction(id));
-    };
-
-    //     const updatedPortfolio = [...portfolio, newTransaction];
-    //     savePortfolio(updatedPortfolio);
-    //     reset();
-    // };
-
-    // const deleteTransaction = (id: string) => {
-    //     const updatedPortfolio = portfolio.filter((item) => item.id !== id);
-    //     savePortfolio(updatedPortfolio);
-    // };
-
-    const calculateStats = () => {
+    // Calculate portfolio stats
+    const stats = useMemo(() => {
         let totalInvested = 0;
         let currentValue = 0;
 
-        portfolio.forEach((item) => {
+        transactions.forEach((item) => {
             totalInvested += item.totalCost;
             const currentPrice = currentPrices[item.coinId] || 0;
             currentValue += item.amount * currentPrice;
@@ -189,9 +287,7 @@ const PortfolioPage = () => {
             profitLoss,
             profitLossPercent,
         };
-    };
-
-    const stats = calculateStats();
+    }, [transactions, currentPrices]);
 
     if (loading) {
         return (
@@ -398,97 +494,107 @@ const PortfolioPage = () => {
                     </Card>
                 </div>
 
-                {/* List Section - 使用 Card */}
+                {/* List Section - 使用 TanStack Table */}
                 <div className="lg:col-span-2">
                     <Card>
-                        <CardHeader>
+                        <CardHeader className="flex flex-row items-center justify-between">
                             <CardTitle>My Holdings</CardTitle>
+                            {transactions.length > 0 && (
+                                <Input
+                                    placeholder="Search holdings..."
+                                    value={globalFilter}
+                                    onChange={(e) => setGlobalFilter(e.target.value)}
+                                    className="max-w-xs"
+                                />
+                            )}
                         </CardHeader>
                         <CardContent>
-                            {portfolio.length === 0 ? (
+                            {transactions.length === 0 ? (
                                 <div className="text-center py-12 border-2 border-dashed rounded-lg">
                                     <p className="text-muted-foreground mb-4">You don't have any holdings yet.</p>
                                     <p className="text-sm text-muted-foreground">Add your first transaction using the form on the left.</p>
                                 </div>
                             ) : (
-                                <div className="rounded-md border overflow-hidden">
-                                    <Table>
-                                        <TableHeader className="bg-muted/50">
-                                            <TableRow>
-                                                <TableHead>Coin</TableHead>
-                                                <TableHead className="text-right">Amount</TableHead>
-                                                <TableHead className="text-right">Price Paid</TableHead>
-                                                <TableHead className="text-right">P/L</TableHead>
-                                                <TableHead className="text-center">Action</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {portfolio.map((item) => {
-                                                const currentPrice = currentPrices[item.coinId] || 0;
-                                                const currentValue = item.amount * currentPrice;
-                                                const profitLoss = currentValue - item.totalCost;
-                                                const profitLossPercent = item.totalCost > 0 ? (profitLoss / item.totalCost) * 100 : 0;
-
-                                                return (
-                                                    <TableRow key={item.id}>
-                                                        <TableCell>
-                                                            <div className="flex items-center gap-3">
-                                                                <img src={item.coinImage} alt="" className="w-8 h-8 rounded-full" />
-                                                                <div>
-                                                                    <p className="font-semibold text-sm">{item.coinName}</p>
-                                                                    <p className="text-xs text-muted-foreground uppercase">{item.coinSymbol}</p>
-                                                                </div>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-right font-mono text-sm">
-                                                            {item.amount.toLocaleString(undefined, { maximumFractionDigits: 8 })}
-                                                        </TableCell>
-                                                        <TableCell className="text-right text-sm">
-                                                            ${item.purchasePrice.toLocaleString()}
-                                                        </TableCell>
-                                                        <TableCell className="text-right">
-                                                            <div className="flex flex-col items-end">
-                                                                <span className={profitLoss >= 0 ? "text-green-500 font-medium text-sm" : "text-red-500 font-medium text-sm"}>
-                                                                    {profitLoss >= 0 ? '+' : ''}${Math.abs(profitLoss).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                                                </span>
-                                                                <Badge variant={profitLoss >= 0 ? "default" : "destructive"} className="text-[10px] px-1 h-4">
-                                                                    {profitLoss >= 0 ? '+' : ''}{profitLossPercent.toFixed(2)}%
-                                                                </Badge>
-                                                            </div>
-                                                        </TableCell>
-                                                        <TableCell className="text-center">
-                                                            <AlertDialog>
-                                                                <AlertDialogTrigger asChild>
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="icon"
-                                                                        className="text-muted-foreground hover:text-destructive"
-                                                                    >
-                                                                        <Trash2 className="w-4 h-4" />
-                                                                    </Button>
-                                                                </AlertDialogTrigger>
-                                                                <AlertDialogContent>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>
-                                                                            This action cannot be undone. This will permanently remove this transaction from your portfolio.
-                                                                        </AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction onClick={() => handleDeleteTransaction(item.id)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                                                            Delete
-                                                                        </AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </AlertDialogContent>
-                                                            </AlertDialog>
+                                <>
+                                    <div className="rounded-md border overflow-hidden">
+                                        <Table>
+                                            <TableHeader className="bg-muted/50">
+                                                {table.getHeaderGroups().map((headerGroup) => (
+                                                    <TableRow key={headerGroup.id}>
+                                                        {headerGroup.headers.map((header) => (
+                                                            <TableHead key={header.id}>
+                                                                {header.isPlaceholder
+                                                                    ? null
+                                                                    : flexRender(
+                                                                        header.column.columnDef.header,
+                                                                        header.getContext()
+                                                                    )}
+                                                            </TableHead>
+                                                        ))}
+                                                    </TableRow>
+                                                ))}
+                                            </TableHeader>
+                                            <TableBody>
+                                                {table.getRowModel().rows.length ? (
+                                                    table.getRowModel().rows.map((row) => (
+                                                        <TableRow key={row.id}>
+                                                            {row.getVisibleCells().map((cell) => (
+                                                                <TableCell key={cell.id}>
+                                                                    {flexRender(
+                                                                        cell.column.columnDef.cell,
+                                                                        cell.getContext()
+                                                                    )}
+                                                                </TableCell>
+                                                            ))}
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={columns.length} className="h-24 text-center">
+                                                            No results found.
                                                         </TableCell>
                                                     </TableRow>
-                                                );
-                                            })}
-                                        </TableBody>
-                                    </Table>
-                                </div>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    </div>
+
+                                    {/* Pagination */}
+                                    {table.getPageCount() > 1 && (
+                                        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
+                                            <div className="text-sm text-muted-foreground">
+                                                Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+                                            </div>
+                                            <Pagination className="flex justify-end w-auto mx-0">
+                                                <PaginationContent>
+                                                    <PaginationItem>
+                                                        <PaginationPrevious
+                                                            onClick={() => table.previousPage()}
+                                                            className={!table.getCanPreviousPage() ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                                        />
+                                                    </PaginationItem>
+                                                    {Array.from({ length: table.getPageCount() }, (_, i) => i + 1).map((page) => (
+                                                        <PaginationItem key={page}>
+                                                            <PaginationLink
+                                                                onClick={() => table.setPageIndex(page - 1)}
+                                                                isActive={table.getState().pagination.pageIndex === page - 1}
+                                                                className="cursor-pointer"
+                                                            >
+                                                                {page}
+                                                            </PaginationLink>
+                                                        </PaginationItem>
+                                                    ))}
+                                                    <PaginationItem>
+                                                        <PaginationNext
+                                                            onClick={() => table.nextPage()}
+                                                            className={!table.getCanNextPage() ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                                        />
+                                                    </PaginationItem>
+                                                </PaginationContent>
+                                            </Pagination>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </CardContent>
                     </Card>

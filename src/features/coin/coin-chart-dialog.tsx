@@ -123,9 +123,9 @@ export function CoinChartDialog({ coin, open, onOpenChange }: CoinChartDialogPro
                                         domain={['auto', 'auto']}
                                         tickFormatter={(value) => `$${value.toLocaleString()}`}
                                     />
-                                    <Tooltip 
-                                        formatter={(value: number) => [`$${value.toLocaleString()}`, 'Price']}
-                                        contentStyle={{ 
+                                    <Tooltip
+                                        formatter={(value) => [`$${Number(value).toLocaleString()}`, 'Price']}
+                                        contentStyle={{
                                             backgroundColor: 'rgba(255, 255, 255, 0.95)',
                                             border: '1px solid #ccc',
                                             borderRadius: '8px'
